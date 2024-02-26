@@ -43,6 +43,8 @@ func ReadJsonFileIntoGrypeDataModel(
 //}
 func ProcessGrypeDataModel(
 	vulnerabilityReportList models.VulnerabilityReportList,
+	rejectSeverityList []string,
+	changeOfPackage map[string]string,
 ) (models.ReportList, error) {
 
 	lengthOfMatches := len(vulnerabilityReportList.Matches)
@@ -76,18 +78,25 @@ func ProcessGrypeDataModel(
 				report.Description = vulnerabilityReport.Vulnerability.Description
 			}
 
-			// Need to ask Shivang what is Reject_SEV
 			if vulnerabilityReport.Vulnerability.Severity != "" {
-				report.Severity = vulnerabilityReport.Vulnerability.Severity
+				serverity := vulnerabilityReport.Vulnerability.Severity
+				if rejectSeverity(serverity, rejectSeverityList) {
+					continue
+				}else {
+					report.Severity = vulnerabilityReport.Vulnerability.Severity
+				}
 			}
 
 			if vulnerabilityReport.Artifact.Name != "" {
 				report.Package = vulnerabilityReport.Artifact.Name
 			}
 
-			// Need to ask Shivang about change_package_type
 			if vulnerabilityReport.Artifact.Type != "" {
-				report.TypeOfPackage = vulnerabilityReport.Artifact.Type
+				if changeOfPackage[vulnerabilityReport.Artifact.Type] != "" {
+					report.TypeOfPackage = changeOfPackage[vulnerabilityReport.Artifact.Type]
+				}else {
+					report.TypeOfPackage = vulnerabilityReport.Artifact.Type
+				}
 			}
 
 			if vulnerabilityReport.Artifact.Version != "" {
@@ -100,10 +109,10 @@ func ProcessGrypeDataModel(
 				}
 			}
 
-			if vulnerabilityReport.Artifact.Language != "" {
-				report.Type = "Operating System"
-			}else {
-				report.Type = "Installed Application"
+			if vulnerabilityReport.Artifact.Language == "" {
+					report.Type = "Operating System"
+				}else {
+					report.Type = "Installed Application"
 			}
 
 			finalReport.Reports = append(finalReport.Reports, report)
@@ -121,6 +130,15 @@ func ProcessGrypeDataModel(
 // }
 func containsGHSA(input string) bool {
 	return strings.Contains(input, "GHSA")
+}
+
+func rejectSeverity(serverity string, rejectSeverityList []string) bool {
+	for _, reject := range rejectSeverityList {
+		if serverity == reject {
+			return true
+		}
+	}
+	return false
 }
 
 // WriteReportListIntoJsonFile is a function to write the ReportList into a JSON file
