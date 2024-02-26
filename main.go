@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/CloudDefenseAI/datahandler/filehandles"
+	"github.com/CloudDefenseAI/datahandler/filehandlers"
 	"github.com/CloudDefenseAI/datahandler/models"
 )
 
